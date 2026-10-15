@@ -17,9 +17,21 @@ jobs:
       # Номер проекта на expo.dev — для патчей по воздуху (см. app.config.js). Необязателен:
       # без него шаг «Проект Expo» найдёт проект сам по токену.
       EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID || vars.EXPO_PROJECT_ID }}
-      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN || vars.EXPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
+      # Что из ключей GitHub видит (сами значения не печатаются — только «есть / нет»).
+      # Принимаются и секреты (Secrets), и переменные (Variables) репозитория — куда бы ни положили.
+      - name: Ключи на месте?
+        env:
+          K_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN || vars.EXPO_TOKEN }}
+          K_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY || vars.TMDB_API_KEY }}
+          K_WYZIE_KEY: ${{ secrets.WYZIE_KEY || vars.WYZIE_KEY }}
+        run: |
+          for k in EXPO_TOKEN TMDB_API_KEY WYZIE_KEY; do
+            v="K_$k"; if [ -n "${!v}" ]; then echo "✓ $k"; else echo "✗ $k — НЕТ"; fi
+          done
 
       - uses: maxim-lobanov/setup-xcode@v1
         with:
@@ -33,8 +45,8 @@ jobs:
       # Settings → Secrets and variables → Actions. EXPO_PUBLIC_* вшиваются в код при сборке.
       - name: .env из секретов
         run: |
-          echo "EXPO_PUBLIC_TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" > .env
-          echo "EXPO_PUBLIC_WYZIE_KEY=${{ secrets.WYZIE_KEY }}" >> .env
+          echo "EXPO_PUBLIC_TMDB_API_KEY=${{ secrets.TMDB_API_KEY || vars.TMDB_API_KEY }}" > .env
+          echo "EXPO_PUBLIC_WYZIE_KEY=${{ secrets.WYZIE_KEY || vars.WYZIE_KEY }}" >> .env
 
       - name: Зависимости
         run: |
@@ -50,7 +62,7 @@ jobs:
       # каждом запуске — это тот же проект. Если секрет EXPO_PROJECT_ID задан, берётся он.
       - name: Проект Expo
         run: |
-          test -n "$EXPO_TOKEN" || { echo "::error::Нет секрета EXPO_TOKEN (expo.dev → Account settings → Access tokens)"; exit 1; }
+          test -n "$EXPO_TOKEN" || { echo "::error::GitHub не видит EXPO_TOKEN. Он должен лежать в Settings РЕПОЗИТОРИЯ lumiere-mobile → Secrets and variables → Actions → вкладка Secrets → Repository secrets, имя ровно EXPO_TOKEN"; exit 1; }
           if [ -z "$EXPO_PROJECT_ID" ]; then
             mv app.config.js app.config.js.off
             npx --yes eas-cli@latest init --non-interactive --force
