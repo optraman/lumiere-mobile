@@ -27,11 +27,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Секреты на месте
-        run: |
-          test -n "$EXPO_TOKEN" || { echo "Нет секрета EXPO_TOKEN"; exit 1; }
-          test -n "$EXPO_PROJECT_ID" || { echo "Нет секрета EXPO_PROJECT_ID"; exit 1; }
-
       - name: .env из секретов
         run: |
           echo "EXPO_PUBLIC_TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" > .env
@@ -42,6 +37,22 @@ jobs:
           npm ci --no-audit --no-fund
           # Та же версия модуля обновлений, что вшита в .ipa (см. ios-ipa.yml).
           npm install --no-audit --no-fund expo-updates@~57.0.24
+
+      # ПРОЕКТ НА EXPO.DEV — САМ, БЕЗ ПОИСКА ID РУКАМИ. По токену EXPO_TOKEN `eas init` находит
+      # проект lumiere-mobile в аккаунте (или создаёт его, если нет) и пишет его ID в app.json.
+      # app.config.js на это время убирается: в него `eas init` писать не умеет. ID одинаков при
+      # каждом запуске — это тот же проект. Если секрет EXPO_PROJECT_ID задан, берётся он.
+      - name: Проект Expo
+        run: |
+          test -n "$EXPO_TOKEN" || { echo "::error::Нет секрета EXPO_TOKEN (expo.dev → Account settings → Access tokens)"; exit 1; }
+          if [ -z "$EXPO_PROJECT_ID" ]; then
+            mv app.config.js app.config.js.off
+            npx --yes eas-cli@latest init --non-interactive --force
+            mv app.config.js.off app.config.js
+            EXPO_PROJECT_ID=$(node -p "require('./app.json').expo.extra.eas.projectId")
+            echo "EXPO_PROJECT_ID=$EXPO_PROJECT_ID" >> "$GITHUB_ENV"
+          fi
+          echo "ID проекта Expo: $EXPO_PROJECT_ID"
 
       - name: Проверка типов
         run: npx tsc --noEmit

@@ -28,15 +28,13 @@ iOS-приложение собирается только на Mac, поэто�
 
 ## Часть 2½. Патчи по воздуху — Expo (один раз, ДО первой сборки)
 
-Без этого .ipa не соберётся: модуль обновлений вшивается в приложение при сборке.
-
 1. Зарегистрироваться на expo.dev.
-2. Projects → **Create a project**: Display name — `Люмьер`, Slug — строго `lumiere-mobile`
-   (как `slug` в app.json, иначе Expo откажется публиковать) → Create.
-3. На странице проекта скопировать **ID** (вида `1a2b3c4d-…`). В GitHub → Settings → Secrets and
-   variables → Actions → New repository secret: Name `EXPO_PROJECT_ID`, Secret — этот ID.
-4. На expo.dev: аватарка → Account settings → **Access tokens** → Create token, имя любое →
-   скопировать (показывается один раз). В GitHub новый секрет: Name `EXPO_TOKEN`, Secret — токен.
+2. Нажать на свой аватар/имя → **Account settings** → слева **Access tokens** →
+   **Create token**, имя любое → скопировать (показывается один раз).
+3. В GitHub новый секрет: Name `EXPO_TOKEN`, Secret — этот токен.
+
+Проект на expo.dev и его ID искать не нужно: сборка сама находит (или создаёт) проект
+`lumiere-mobile` по токену и пишет его ID в журнал шага «Проект Expo».
 
 ## Часть 3. Сборка
 

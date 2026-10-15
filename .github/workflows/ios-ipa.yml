@@ -14,8 +14,10 @@ jobs:
     timeout-minutes: 90
     env:
       LUMIERE_IPA: '1'
-      # Номер проекта на expo.dev — для патчей по воздуху (см. app.config.js).
+      # Номер проекта на expo.dev — для патчей по воздуху (см. app.config.js). Необязателен:
+      # без него шаг «Проект Expo» найдёт проект сам по токену.
       EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID || vars.EXPO_PROJECT_ID }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,8 +44,21 @@ jobs:
           # они попадают только на сборочной машине: автолинковка берёт нативные модули оттуда.
           npm install --no-audit --no-fund expo-splash-screen@~57.0.9 expo-system-ui@~57.0.4 expo-updates@~57.0.24
 
-      - name: Секрет EXPO_PROJECT_ID на месте
-        run: test -n "$EXPO_PROJECT_ID" || { echo "::error::Нет EXPO_PROJECT_ID. Settings → Secrets and variables → Actions → New repository secret, имя ровно EXPO_PROJECT_ID, значение — ID проекта с expo.dev"; exit 1; }
+      # ПРОЕКТ НА EXPO.DEV — САМ, БЕЗ ПОИСКА ID РУКАМИ. По токену EXPO_TOKEN `eas init` находит
+      # проект lumiere-mobile в аккаунте (или создаёт его, если нет) и пишет его ID в app.json.
+      # app.config.js на это время убирается: в него `eas init` писать не умеет. ID одинаков при
+      # каждом запуске — это тот же проект. Если секрет EXPO_PROJECT_ID задан, берётся он.
+      - name: Проект Expo
+        run: |
+          test -n "$EXPO_TOKEN" || { echo "::error::Нет секрета EXPO_TOKEN (expo.dev → Account settings → Access tokens)"; exit 1; }
+          if [ -z "$EXPO_PROJECT_ID" ]; then
+            mv app.config.js app.config.js.off
+            npx --yes eas-cli@latest init --non-interactive --force
+            mv app.config.js.off app.config.js
+            EXPO_PROJECT_ID=$(node -p "require('./app.json').expo.extra.eas.projectId")
+            echo "EXPO_PROJECT_ID=$EXPO_PROJECT_ID" >> "$GITHUB_ENV"
+          fi
+          echo "ID проекта Expo: $EXPO_PROJECT_ID"
 
       - name: Проверка типов
         run: npx tsc --noEmit
