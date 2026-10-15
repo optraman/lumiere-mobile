@@ -23,26 +23,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Что из ключей GitHub видит (сами значения не печатаются — только «есть / нет»).
-      # Принимаются и секреты (Secrets), и переменные (Variables) репозитория — куда бы ни положили.
-      - name: Ключи на месте?
+      # Видит ли GitHub токен Expo (значение не печатается — только «есть / нет»).
+      - name: Токен Expo на месте?
         env:
-          K_EXPO_TOKEN: ${{ secrets.EXPO_TOKEN || vars.EXPO_TOKEN }}
-          K_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY || vars.TMDB_API_KEY }}
-          K_WYZIE_KEY: ${{ secrets.WYZIE_KEY || vars.WYZIE_KEY }}
+          K: ${{ secrets.EXPO_TOKEN || vars.EXPO_TOKEN }}
+        run: if [ -n "$K" ]; then echo "✓ EXPO_TOKEN"; else echo "✗ EXPO_TOKEN — НЕТ"; fi
+
+      # КЛЮЧИ TMDB И СУБТИТРОВ — ИЗ .env В РЕПОЗИТОРИИ. Секреты GitHub — только запасной путь,
+      # если .env в репозитории вдруг нет. EXPO_PUBLIC_* вшиваются в код при сборке.
+      - name: .env
+        env:
+          S_TMDB: ${{ secrets.TMDB_API_KEY || vars.TMDB_API_KEY }}
+          S_WYZIE: ${{ secrets.WYZIE_KEY || vars.WYZIE_KEY }}
         run: |
-          for k in EXPO_TOKEN TMDB_API_KEY WYZIE_KEY; do
-            v="K_$k"; if [ -n "${!v}" ]; then echo "✓ $k"; else echo "✗ $k — НЕТ"; fi
+          if [ -f .env ]; then
+            echo "✓ .env из репозитория"
+          else
+            echo "::warning::.env в репозитории нет — беру ключи из секретов"
+            echo "EXPO_PUBLIC_TMDB_API_KEY=$S_TMDB" > .env
+            echo "EXPO_PUBLIC_WYZIE_KEY=$S_WYZIE" >> .env
+          fi
+          # Только имена и «есть/пусто», без значений.
+          for k in EXPO_PUBLIC_TMDB_API_KEY EXPO_PUBLIC_WYZIE_KEY; do
+            if grep -qE "^$k=.+" .env; then echo "✓ $k"; else echo "✗ $k — пусто"; fi
           done
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: .env из секретов
-        run: |
-          echo "EXPO_PUBLIC_TMDB_API_KEY=${{ secrets.TMDB_API_KEY || vars.TMDB_API_KEY }}" > .env
-          echo "EXPO_PUBLIC_WYZIE_KEY=${{ secrets.WYZIE_KEY || vars.WYZIE_KEY }}" >> .env
 
       - name: Зависимости
         run: |
