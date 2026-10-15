@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Люмьер",
+    "slug": "lumiere-mobile",
+    "scheme": "lumiere",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#08080A",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lighttv.lumieremobile",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsArbitraryLoadsForMedia": true
+        },
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "1",
+      "icon": "./assets/icon.png"
+    },
+    "android": {
+      "package": "com.lighttv.lumieremobile"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-video",
+        {
+          "supportsPictureInPicture": true,
+          "supportsBackgroundPlayback": false
+        }
+      ]
+    ],
+    "icon": "./assets/icon.png"
+  }
+}

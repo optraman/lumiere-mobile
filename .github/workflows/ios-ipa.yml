@@ -1,0 +1,85 @@
+# СБОРКА .ipa ДЛЯ iPHONE НА БЕСПЛАТНОЙ macOS-МАШИНЕ GITHUB.
+#
+# iOS-приложение собирается только на Mac (Xcode), поэтому сборку делает GitHub. На выходе —
+# НЕПОДПИСАННЫЙ Lumiere.ipa: подпись ставит то, чем он устанавливается на телефон (Sideloadly,
+# AltStore, ESign/Feather/Scarlet, TrollStore). Запуск: вкладка Actions → «Сборка .ipa» → Run.
+name: Сборка .ipa
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      LUMIERE_IPA: '1'
+      # Номер проекта на expo.dev — для патчей по воздуху (см. app.config.js).
+      EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Ключи из .env (он в .gitignore и в репозиторий не попадает) — из секретов репозитория:
+      # Settings → Secrets and variables → Actions. EXPO_PUBLIC_* вшиваются в код при сборке.
+      - name: .env из секретов
+        run: |
+          echo "EXPO_PUBLIC_TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" > .env
+          echo "EXPO_PUBLIC_WYZIE_KEY=${{ secrets.WYZIE_KEY }}" >> .env
+
+      - name: Зависимости
+        run: |
+          npm ci --no-audit --no-fund
+          # Заставка, цвет окна и патчи по воздуху: в Expo Go их даёт сам Expo Go (см. app.config.js).
+          # Версии — те, что Expo 57 считает совместимыми (expo/bundledNativeModules.json). В package.json
+          # они попадают только на сборочной машине: автолинковка берёт нативные модули оттуда.
+          npm install --no-audit --no-fund expo-splash-screen@~57.0.9 expo-system-ui@~57.0.4 expo-updates@~57.0.24
+
+      - name: Секрет EXPO_PROJECT_ID на месте
+        run: test -n "$EXPO_PROJECT_ID" || { echo "Нет секрета EXPO_PROJECT_ID — сборка без патчей по воздуху не нужна"; exit 1; }
+
+      - name: Проверка типов
+        run: npx tsc --noEmit
+
+      - name: Нативный проект
+        run: npx expo prebuild --platform ios --clean
+
+      - name: Сборка без подписи
+        run: |
+          WS=$(ls -d ios/*.xcworkspace | head -1)
+          SCHEME=$(basename "$WS" .xcworkspace)
+          echo "Xcode: $(xcodebuild -version | head -1); проект: $SCHEME"
+          xcodebuild -workspace "$WS" -scheme "$SCHEME" -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath build/Lumiere.xcarchive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            archive > build.log 2>&1 || { grep -n "error:" build.log | head -60; tail -n 80 build.log; exit 1; }
+          test -d build/Lumiere.xcarchive/Products/Applications
+
+      - name: Упаковка в .ipa
+        run: |
+          mkdir -p Payload
+          cp -R build/Lumiere.xcarchive/Products/Applications/*.app Payload/
+          zip -qry Lumiere.ipa Payload
+          ls -lh Lumiere.ipa
+
+      # Если сборка упала — полный журнал Xcode, чтобы было что разбирать.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Lumiere-ipa
+          path: Lumiere.ipa
+          retention-days: 30

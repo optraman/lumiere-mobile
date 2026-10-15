@@ -1,0 +1,18 @@
+node_modules/
+.expo/
+dist/
+.env
+*.log
+
+# Нативные папки генерирует expo prebuild на сборочной машине.
+/ios
+/android
+*.ipa
+tools/_to_delete/
+
+# Пустые репозитории, случайно созданные GitHub Desktop внутри проекта.
+/lumiere-mobile/
+/Люмьер/
+# Локальные настройки узла связи и зонда — с адресами и ключами, для сборки не нужны.
+tools/relay.config.json
+tools/collaps.config.json

@@ -1,0 +1,53 @@
+# ПАТЧ ПО ВОЗДУХУ: новый код уходит на сервер Expo, и установленный «Люмьер» подхватывает его сам —
+# качает в фоне при запуске, включает со следующего запуска. Пара минут вместо получаса сборки.
+#
+# Доходит только то, что написано на TypeScript/JS, и картинки/шрифты. Новый нативный модуль,
+# иконка, название, разрешения из app.json — это новый .ipa (см. ios-ipa.yml) с поднятой version.
+name: Патч
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Что в патче (видно на expo.dev)'
+        required: false
+        default: 'Патч'
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Секреты на месте
+        run: |
+          test -n "$EXPO_TOKEN" || { echo "Нет секрета EXPO_TOKEN"; exit 1; }
+          test -n "$EXPO_PROJECT_ID" || { echo "Нет секрета EXPO_PROJECT_ID"; exit 1; }
+
+      - name: .env из секретов
+        run: |
+          echo "EXPO_PUBLIC_TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}" > .env
+          echo "EXPO_PUBLIC_WYZIE_KEY=${{ secrets.WYZIE_KEY }}" >> .env
+
+      - name: Зависимости
+        run: |
+          npm ci --no-audit --no-fund
+          # Та же версия модуля обновлений, что вшита в .ipa (см. ios-ipa.yml).
+          npm install --no-audit --no-fund expo-updates@~57.0.24
+
+      - name: Проверка типов
+        run: npx tsc --noEmit
+
+      # Текст патча — через переменную, а не прямо в команду: кавычки в нём не сломают строку.
+      - name: Публикация
+        env:
+          MSG: ${{ github.event.inputs.message }}
+        run: npx --yes eas-cli@latest update --channel production --platform ios --message "$MSG" --non-interactive
