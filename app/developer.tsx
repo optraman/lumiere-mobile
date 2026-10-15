@@ -13,6 +13,7 @@ import type { MediaItem } from '../src/types/media';
 import { colors } from '../src/theme/colors';
 import { type as typo } from '../src/theme/fonts';
 import { usePortraitInsets } from '../src/nav/portrait';
+import { GlassBack, BACK_GAP } from '../src/components/GlassBack';
 
 /**
  * ДЛЯ РАЗРАБОТЧИКОВ — отдельная страница из настроек (решение Марка): проверка источников, журнал
@@ -122,9 +123,7 @@ function DeveloperBody() {
     <View style={styles.screen}>
       <TopGlow />
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={close} hitSlop={12} style={styles.back}>
-          <SymbolView name="chevron.backward" size={20} tintColor={colors.onBg} />
-        </Pressable>
+        <GlassBack onPress={close} />
         <Text style={styles.headTitle}>Для разработчиков</Text>
       </View>
 
@@ -234,7 +233,8 @@ const styles = StyleSheet.create({
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   switchText: { ...typo.bodyLarge, color: colors.onBg, flex: 1 },
   screen: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingBottom: 12 },
+  // Заголовок — на BACK_GAP от стеклянной стрелки, а не впритык к ней.
+  header: { flexDirection: 'row', alignItems: 'center', gap: BACK_GAP, paddingHorizontal: 14, paddingBottom: 12 },
   back: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   headTitle: { ...typo.pageTitle, color: colors.onBg, flex: 1 },
   body: { paddingHorizontal: 20, paddingTop: 8 },

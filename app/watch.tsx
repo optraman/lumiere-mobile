@@ -1,5 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
+  Alert,
+  AppState,
   Image,
   Pressable,
   ScrollView,
@@ -9,7 +11,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useEvent } from 'expo';
-import { VideoView, useVideoPlayer, type VideoPlayer } from 'expo-video';
+import { VideoView, isPictureInPictureSupported, useVideoPlayer, type VideoPlayer } from 'expo-video';
 import { useKeepAwake } from 'expo-keep-awake';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -92,6 +94,24 @@ const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];
  * Плеер живёт в «лежачей сцене» внутри стоячего экрана (src/player/landscape.tsx): окно не
  * поворачивается никогда, кадр ложится за телефоном сам.
  */
+/** Умеет ли система «картинку в картинке» (на старых iPad и в симуляторе — нет). Не меняется. */
+const PIP = (() => {
+  try {
+    return isPictureInPictureSupported();
+  } catch {
+    return false;
+  }
+})();
+
+/** Карточка на экране блокировки и в «Пункте управления»: название, серия, кадр. */
+function nowPlaying(r: PlaybackRequest) {
+  return {
+    title: r.title,
+    artist: r.subtitle ?? undefined,
+    artwork: r.backdropUrl ?? r.posterUrl ?? undefined,
+  };
+}
+
 export default function WatchScreen() {
   return (
     <LandscapeStage>
@@ -160,6 +180,7 @@ function WatchScreenBody() {
         uri: req.url,
         headers: req.headers,
         contentType: req.isHls ? ('hls' as const) : ('progressive' as const),
+        metadata: nowPlaying(req),
       }
     : null;
 
@@ -169,6 +190,7 @@ function WatchScreenBody() {
           uri: first.url,
           headers: first.headers,
           contentType: first.isHls ? ('hls' as const) : ('progressive' as const),
+          metadata: nowPlaying(first),
         }
       : null,
   );
@@ -179,12 +201,57 @@ function WatchScreenBody() {
     экран. Поэтому сюда отдаётся ПЕРВЫЙ источник и больше не меняется никогда; всё остальное —
     качество, озвучка, серия — идёт через replaceAsync у того же плеера, как и задумано.
   */
+  const videoView = useRef<VideoView>(null);
+  /*
+    «КАРТИНКА В КАРТИНКЕ» ПО КНОПКЕ. Если система отказала — не молчим: причина идёт в журнал и
+    на экран. Молчаливая кнопка, которая «ничего не делает», — худшее, что может быть: не понять,
+    сломана она или телефон не умеет. Самая частая причина — запуск в Expo Go: там нет фонового
+    режима «аудио», без которого iOS окно не открывает; в собранном .ipa он есть (app.json).
+  */
+  /*
+    СИСТЕМНЫЕ КНОПКИ — ТОЛЬКО НА МИГ ПЕРЕХОДА В ОКНО. У плеера свои кнопки, системные выключены
+    (nativeControls={false}), а без них AVKit на части версий iOS отказывается открывать окно —
+    ни по просьбе, ни сам при сворачивании. Поэтому на время перехода они включаются: при
+    сворачивании это под анимацией ухода на домашний экран, а по кнопке — на долю секунды до
+    того, как кадр улетит в окно. Вернулся в приложение — снова только свои.
+  */
+  const [pipPrep, setPipPrep] = useState(false);
+  const inPip = useRef(false);
+  const startPip = useCallback(() => {
+    setPipPrep(true);
+    // Кадр, чтобы системные кнопки успели встать, — потом просим окно.
+    setTimeout(() => {
+      const v = videoView.current;
+      if (!v) return;
+      v.startPictureInPicture().catch((e: unknown) => {
+        setPipPrep(false);
+        const why = e instanceof Error ? e.message : String(e);
+        say(`Картинка в картинке не открылась: ${why}`);
+        Alert.alert('Картинка в картинке недоступна', why);
+      });
+    }, 120);
+  }, []);
   const player = useVideoPlayer(initial, (p) => {
     p.timeUpdateEventInterval = 0.25;
-    p.staysActiveInBackground = false;
+    /*
+      ФОН И ЭКРАН БЛОКИРОВКИ. Свернул приложение или погасил экран — звук идёт дальше, а на экране
+      блокировки и в «Пункте управления» карточка с названием и кнопками (данные — nowPlaying).
+      Если свернуть во время показа, кадр уходит в «картинку в картинке» (см. VideoView).
+    */
+    p.staysActiveInBackground = true;
+    p.showNowPlayingNotification = true;
     if (first?.startPositionMs) p.currentTime = first.startPositionMs / 1000;
     p.play();
   });
+
+  // Сворачивание: «неактивно» наступает раньше «в фоне» — как раз успеть подготовить окно.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (st) => {
+      if (st === 'inactive' && player.playing) setPipPrep(true);
+      if (st === 'active' && !inPip.current) setPipPrep(false);
+    });
+    return () => sub.remove();
+  }, [player]);
 
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing, oldIsPlaying: false });
   /** Пропорции кадра — по ним рамка подгоняется к самому видео (см. «Улетает сам кадр»). */
@@ -414,7 +481,7 @@ function WatchScreenBody() {
   }, [player, applyTracks]);
 
   const startSwap = useCallback(
-    (src: { uri: string; headers?: Record<string, string>; contentType: 'hls' | 'progressive' }, positionMs: number) => {
+    (src: { uri: string; headers?: Record<string, string>; contentType: 'hls' | 'progressive'; metadata?: ReturnType<typeof nowPlaying> }, positionMs: number) => {
       seekTo.current = positionMs;
       swapping.current = true;
       sawLoading.current = false;
@@ -854,7 +921,7 @@ function WatchScreenBody() {
       setTracks({ subs: [], audio: [] });
       setAudioPick(null);
       startSwap(
-        { uri: next.url, headers: next.headers, contentType: next.isHls ? ('hls' as const) : ('progressive' as const) },
+        { uri: next.url, headers: next.headers, contentType: next.isHls ? ('hls' as const) : ('progressive' as const), metadata: nowPlaying(next) },
         positionMs,
       );
     },
@@ -1664,11 +1731,21 @@ function WatchScreenBody() {
           </View>
         ) : null}
         <VideoView
+          ref={videoView}
           player={player}
           style={StyleSheet.absoluteFill}
           contentFit={fit}
-          nativeControls={false}
+          nativeControls={pipPrep}
           allowsPictureInPicture
+          // Свернул приложение во время показа — кадр сам уходит в маленькое окно поверх всего.
+          startsPictureInPictureAutomatically
+          onPictureInPictureStart={() => {
+            inPip.current = true;
+          }}
+          onPictureInPictureStop={() => {
+            inPip.current = false;
+            setPipPrep(false);
+          }}
         />
       </Animated.View>
 
@@ -1747,7 +1824,7 @@ function WatchScreenBody() {
           уезжали под вырез и под полосу home. На бумаге отступы были, на экране — нет.
         */}
         <Animated.View style={[styles.top, { paddingTop: insets.top + 8, paddingLeft: sidePad + 4, paddingRight: sidePad + 4 }, drawerAside]}>
-          <GlassButton icon="chevron.backward" size={22} diameter={40} bare onPress={leave} />
+          <GlassButton icon="chevron.backward" size={19} diameter={40} onPress={leave} />
           <Animated.View style={styles.titles} pointerEvents="none">
             {logo ? (
               <Image source={{ uri: logo }} style={styles.logo} resizeMode="contain" />
@@ -1763,8 +1840,15 @@ function WatchScreenBody() {
             {/* Источник («с устройства», «Collaps») — только если включено в «Для разработчиков». */}
             <Text style={styles.sub}>{[req.subtitle, devShowSource ? req.sourceName : null].filter(Boolean).join(' · ')}</Text>
           </Animated.View>
-          {/* Пустышка шириной с кнопку: без неё «центр» оказывается смещён на её ширину. */}
-          <View style={styles.topBalance} />
+          {/*
+            «КАРТИНКА В КАРТИНКЕ» — справа, напротив «назад», заодно уравновешивает ряд, и
+            название остаётся по центру. Где системой не поддерживается — пустышка той же ширины.
+          */}
+          {PIP ? (
+            <GlassButton icon="pip.enter" size={18} diameter={40} onPress={startPip} />
+          ) : (
+            <View style={styles.topBalance} />
+          )}
         </Animated.View>
 
         {/*

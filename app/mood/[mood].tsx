@@ -18,6 +18,7 @@ import { mapItems } from '../../src/api/mapper';
 import { mainstream } from '../../src/api/curate';
 import { openTitle } from '../../src/nav/openTitle';
 import type { MediaItem } from '../../src/types/media';
+import { GlassBack, BACK_GAP, BACK_SIZE } from '../../src/components/GlassBack';
 
 /**
  * СТРАНИЦА НАСТРОЕНИЯ — устроена как страница кинофеста: сверху вместо кадра — сама карточка
@@ -187,11 +188,7 @@ function Body() {
           </Text>
         </View>
       </Animated.View>
-      <Pressable onPress={close} hitSlop={12} style={[styles.back, { top: insets.top + 6 }]}>
-        <View style={styles.backCircle}>
-          <SymbolView name="chevron.backward" size={18} tintColor={colors.onBg} />
-        </View>
-      </Pressable>
+      <GlassBack onPress={close} style={[styles.back, { top: insets.top + 2 }]} />
     </View>
   );
 }
@@ -203,7 +200,8 @@ const styles = StyleSheet.create({
   // Те же размеры, что у шапки страницы фильма: полоса 34 точки, по бокам место под стрелку.
   topBar: { position: 'absolute', left: 0, right: 0, top: 0, paddingBottom: 8, overflow: 'hidden' },
   topBarTint: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(8,8,10,0.5)' },
-  topBarInner: { height: 34, marginHorizontal: 58, alignItems: 'center', justifyContent: 'center' },
+  // Поля по бокам: стрелка (14 + BACK_SIZE) и ещё BACK_GAP — название в шапке её не касается.
+  topBarInner: { height: 34, marginHorizontal: 14 + BACK_SIZE + BACK_GAP, alignItems: 'center', justifyContent: 'center' },
   topBarTitle: { fontFamily: font.display, fontWeight: '800', fontSize: 17, letterSpacing: 0.5, color: colors.onBg, textAlign: 'center' },
   backCircle: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(8,8,10,0.5)' },
   hero: { alignItems: 'center', paddingHorizontal: 28, paddingBottom: 30 },

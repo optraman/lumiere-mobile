@@ -16,3 +16,4 @@ tools/_to_delete/
 # Локальные настройки узла связи и зонда — с адресами и ключами, для сборки не нужны.
 tools/relay.config.json
 tools/collaps.config.json
+/lumiere-mobiles/

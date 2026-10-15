@@ -17,6 +17,7 @@ import { colors } from '../../src/theme/colors';
 import { font, type as typo } from '../../src/theme/fonts';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePortraitInsets } from '../../src/nav/portrait';
+import { GlassBack, BACK_GAP, BACK_SIZE } from '../../src/components/GlassBack';
 
 /**
  * Страница человека: кто это и в чём участвовал. Открывается по нажатию на режиссёра или актёра, а
@@ -254,15 +255,7 @@ export default function PersonScreen() {
 
         {/* Стрелка «назад» поверх содержимого: системной шапки на этом экране нет (иначе она даёт
             чёрную полосу), а возврат должен быть доступен и без жеста. */}
-        <Pressable
-          onPress={() => startClose()}
-          style={[styles.back, { top: insets.top + 6 }]}
-          hitSlop={10}
-        >
-          <View style={styles.backCircle}>
-            <MaterialIcons name="arrow-back-ios-new" size={17} color={colors.onBg} />
-          </View>
-        </Pressable>
+        <GlassBack onPress={() => startClose()} style={[styles.back, { top: insets.top + 2 }]} />
         </Animated.View>
       </GestureDetector>
       {/* Своё меню тайтла поверх страницы (корневое — под модальным окном, см. TitleMenu). */}

@@ -15,7 +15,7 @@ jobs:
     env:
       LUMIERE_IPA: '1'
       # Номер проекта на expo.dev — для патчей по воздуху (см. app.config.js).
-      EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID }}
+      EXPO_PROJECT_ID: ${{ secrets.EXPO_PROJECT_ID || vars.EXPO_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,7 +43,7 @@ jobs:
           npm install --no-audit --no-fund expo-splash-screen@~57.0.9 expo-system-ui@~57.0.4 expo-updates@~57.0.24
 
       - name: Секрет EXPO_PROJECT_ID на месте
-        run: test -n "$EXPO_PROJECT_ID" || { echo "Нет секрета EXPO_PROJECT_ID — сборка без патчей по воздуху не нужна"; exit 1; }
+        run: test -n "$EXPO_PROJECT_ID" || { echo "::error::Нет EXPO_PROJECT_ID. Settings → Secrets and variables → Actions → New repository secret, имя ровно EXPO_PROJECT_ID, значение — ID проекта с expo.dev"; exit 1; }
 
       - name: Проверка типов
         run: npx tsc --noEmit

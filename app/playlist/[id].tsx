@@ -13,6 +13,7 @@ import { Mosaic, countLabel } from '../../src/components/PlaylistCover';
 import { FadeInImage } from '../../src/components/FadeInImage';
 import { PosterCard } from '../../src/components/PosterCard';
 import { PlaylistSheet } from '../../src/components/PlaylistSheet';
+import { GlassBack, BACK_GAP } from '../../src/components/GlassBack';
 
 /**
  * ОДИН ПЛЕЙЛИСТ: обложка и имя сверху (по «⋯» — переименовать, сменить фото, удалить), ниже
@@ -41,9 +42,7 @@ function Body() {
     <View style={styles.screen}>
       <TopGlow />
       <View style={[styles.head, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={close} hitSlop={12} style={styles.back}>
-          <SymbolView name="chevron.backward" size={20} tintColor={colors.onBg} />
-        </Pressable>
+        <GlassBack onPress={close} />
         <View style={{ flex: 1 }} />
         {p ? (
           <Pressable onPress={() => setEditing(true)} hitSlop={12} style={styles.back}>
@@ -100,7 +99,7 @@ function Body() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 6 },
+  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 6, gap: BACK_GAP },
   back: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   hero: { alignItems: 'center', paddingBottom: 18 },
   cover: { width: 180, height: 180 },

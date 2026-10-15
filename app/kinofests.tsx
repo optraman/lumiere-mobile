@@ -15,6 +15,7 @@ import { countdown, kinofestsNow, type Kinofest } from '../src/data/kinofests';
 import { Mosaic, countLabel } from '../src/components/PlaylistCover';
 import { FadeInImage } from '../src/components/FadeInImage';
 import { PlaylistSheet } from '../src/components/PlaylistSheet';
+import { GlassBack, BACK_GAP } from '../src/components/GlassBack';
 
 /**
  * КИНОФЕСТ — плитка с главной (вместо «Плейлистов»). Большие квадратные плитки в две колонки:
@@ -121,9 +122,7 @@ function Body() {
     <View style={styles.screen}>
       <TopGlow />
       <View style={[styles.head, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={close} hitSlop={12} style={styles.back}>
-          <SymbolView name="chevron.backward" size={20} tintColor={colors.onBg} />
-        </Pressable>
+        <GlassBack onPress={close} />
         <Text style={styles.title}>Кинофест</Text>
       </View>
       <FlatList
@@ -147,7 +146,8 @@ function Body() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 12, gap: 6 },
+  // Заголовок — на BACK_GAP от стеклянной стрелки, а не впритык к ней.
+  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 12, gap: BACK_GAP },
   back: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   title: { ...typo.pageTitle, color: colors.onBg, flex: 1 },
   section: { ...typo.titleMedium, color: colors.mutedWarm, marginTop: 8, marginBottom: 12 },

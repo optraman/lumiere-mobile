@@ -13,6 +13,7 @@ import { TmdbApi } from '../../src/api/tmdb';
 import { mapItem } from '../../src/api/mapper';
 import { openTitle } from '../../src/nav/openTitle';
 import type { MediaItem } from '../../src/types/media';
+import { GlassBack, BACK_GAP, BACK_SIZE } from '../../src/components/GlassBack';
 
 /**
  * ОДИН КИНОФЕСТ — как у Влада: задник главного фильма во всю ширину, название, описание и отсчёт
@@ -126,11 +127,7 @@ function Body() {
         }
         renderItem={({ item, index }) => <EntryRow e={item} n={index + 1} />}
       />
-      <Pressable onPress={close} hitSlop={12} style={[styles.back, { top: insets.top + 6 }]}>
-        <View style={styles.backCircle}>
-          <SymbolView name="chevron.backward" size={18} tintColor={colors.onBg} />
-        </View>
-      </Pressable>
+      <GlassBack onPress={close} style={[styles.back, { top: insets.top + 2 }]} />
     </View>
   );
 }

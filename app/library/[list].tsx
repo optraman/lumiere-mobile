@@ -24,6 +24,7 @@ import { moodByKey } from '../../src/data/moods';
 import { TmdbApi } from '../../src/api/tmdb';
 import { mapItems } from '../../src/api/mapper';
 import { mainstream } from '../../src/api/curate';
+import { GlassBack, BACK_GAP } from '../../src/components/GlassBack';
 
 /**
  * ЭКРАН СПИСКА — куда ведут плитки главной.
@@ -197,9 +198,7 @@ function LibraryScreenBody() {
     <View style={styles.screen}>
       <TopGlow />
       <View style={[styles.head, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={close} hitSlop={12} style={styles.back}>
-          <SymbolView name="chevron.backward" size={20} tintColor={colors.onBg} />
-        </Pressable>
+        <GlassBack onPress={close} />
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
@@ -386,7 +385,8 @@ function humanDate(iso: string): string {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 12, gap: 6 },
+  // Заголовок — на BACK_GAP от стеклянной стрелки, а не впритык к ней.
+  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 12, gap: BACK_GAP },
   back: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   title: { ...typo.pageTitle, color: colors.onBg, flex: 1 },
   // Капсула, как прочие кнопки-надписи приложения: тонкая рамка, без заливки — действие редкое.

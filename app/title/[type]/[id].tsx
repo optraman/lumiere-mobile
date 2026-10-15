@@ -46,6 +46,7 @@ import { ExpandableText } from '../../../src/components/ExpandableText';
 import { useScreenZoom } from '../../../src/nav/useScreenZoom';
 import { useZoomBack } from '../../../src/nav/zoomBack';
 import { usePortraitInsets, usePortraitWindow } from '../../../src/nav/portrait';
+import { GlassBack, BACK_GAP, BACK_SIZE } from '../../../src/components/GlassBack';
 
 /** На сколько обложка опущена от верха блока. Освободившаяся полоса — чёрный фон страницы, в
  * который растворяется верх кадра (coverFade). */
@@ -60,7 +61,8 @@ const COVER_DROP = 54;
 const SEAM_H = 44;
 
 /** Поля шапки по бокам: слева за ними стоит стрелка «назад». */
-const TOP_BAR_SIDES = 58;
+// Поля шапки: стрелка (14 + BACK_SIZE) и ещё BACK_GAP — название не касается стеклянной кнопки.
+const TOP_BAR_SIDES = 14 + BACK_SIZE + BACK_GAP;
 /** Высота марки в шапке: чуть меньше самой строки, чтобы марка не упиралась в её края. */
 const TOP_BAR_MARK_H = 30;
 
@@ -784,11 +786,7 @@ export default function DetailsScreen() {
             </View>
           </Animated.View>
 
-          <Pressable onPress={() => startClose()} style={[styles.close, { top: insets.top + 6 }]} hitSlop={10}>
-            <View style={styles.closeCircle}>
-              <MaterialIcons name="arrow-back-ios-new" size={17} color={colors.onBg} />
-            </View>
-          </Pressable>
+          <GlassBack onPress={() => startClose()} style={[styles.close, { top: insets.top + 2 }]} />
         </Animated.View>
       </GestureDetector>
       {/* Своё меню тайтла поверх страницы (корневое — под модальным окном, см. TitleMenu). */}

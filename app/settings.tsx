@@ -21,6 +21,7 @@ import { usePortraitInsets } from '../src/nav/portrait';
 import { router } from 'expo-router';
 import { useDownloads } from '../src/downloads/store';
 import { fmtSize, freeSpace, parallelDownloads, setParallelDownloads } from '../src/downloads/engine';
+import { GlassBack, BACK_GAP } from '../src/components/GlassBack';
 
 /**
  * НАСТРОЙКИ.
@@ -97,9 +98,7 @@ function SettingsBody() {
     <View style={styles.screen}>
       <TopGlow />
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={close} hitSlop={12} style={styles.back}>
-          <SymbolView name="chevron.backward" size={20} tintColor={colors.onBg} />
-        </Pressable>
+        <GlassBack onPress={close} />
         <Text style={styles.headTitle}>Настройки</Text>
       </View>
 
@@ -236,7 +235,8 @@ const styles = StyleSheet.create({
   devRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   devText: { ...typo.bodyLarge, color: colors.onBg },
   screen: { flex: 1, backgroundColor: colors.bg },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingBottom: 12 },
+  // Заголовок — на BACK_GAP от стеклянной стрелки, а не впритык к ней.
+  header: { flexDirection: 'row', alignItems: 'center', gap: BACK_GAP, paddingHorizontal: 14, paddingBottom: 12 },
   back: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   headTitle: { ...typo.pageTitle, color: colors.onBg, flex: 1 },
   body: { paddingHorizontal: 20, paddingTop: 8 },

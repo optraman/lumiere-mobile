@@ -46,6 +46,7 @@ import { enqueueDownload, freeSpace, fmtSize } from '../src/downloads/engine';
 import { voiceForAsync } from '../src/data/voicePrefs';
 import { titleKey } from '../src/data/watchProgress';
 import { useVoicePicker } from '../src/components/VoicePicker';
+import { GlassBack, BACK_GAP, BACK_SIZE } from '../src/components/GlassBack';
 
 /**
  * «Смотреть».
@@ -649,11 +650,7 @@ export default function OnlineScreen() {
           */}
           <TopGlow />
 
-          <Pressable onPress={() => zoom.close()} style={[styles.back, { top: insets.top + 6 }]} hitSlop={12}>
-            <View style={styles.backCircle}>
-              <MaterialIcons name="arrow-back-ios-new" size={17} color={colors.onBg} />
-            </View>
-          </Pressable>
+          <GlassBack onPress={() => zoom.close()} style={[styles.back, { top: insets.top + 2 }]} />
 
           {(state.kind === 'loading' || state.kind === 'resolving') && (
             <View style={styles.center}>

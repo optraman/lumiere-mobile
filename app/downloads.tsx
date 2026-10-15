@@ -29,6 +29,7 @@ import { openTitleMenu } from '../src/components/TitleMenu';
 import { openTitle } from '../src/nav/openTitle';
 import type { DlItem } from '../src/downloads/store';
 import type { MediaItem } from '../src/types/media';
+import { GlassBack, BACK_GAP } from '../src/components/GlassBack';
 
 /** Загрузка хранит урезанную карточку тайтла — меню и страница фильма ждут полную: дополняем пустым. */
 function asMedia(d: DlItem): MediaItem {
@@ -115,9 +116,7 @@ function DownloadsScreenBody() {
     <View style={styles.screen}>
       <TopGlow />
       <View style={[styles.head, { paddingTop: insets.top + 8 }]}>
-        <Pressable onPress={close} hitSlop={12} style={styles.back}>
-          <SymbolView name="chevron.backward" size={20} tintColor={colors.onBg} />
-        </Pressable>
+        <GlassBack onPress={close} />
         <Text style={styles.title}>Загрузки</Text>
         {hasActive || canResume ? (
           <Pressable
@@ -376,7 +375,8 @@ function plural(n: number, one: string, few: string, many: string): string {
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingBottom: 12, gap: 6 },
+  // Заголовок — на BACK_GAP от стеклянной стрелки, а не впритык к ней.
+  head: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingBottom: 12, gap: BACK_GAP },
   back: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   title: { ...typo.pageTitle, color: colors.onBg, flex: 1 },
   pill: {
